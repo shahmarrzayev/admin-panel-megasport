@@ -369,6 +369,21 @@ export default function User() {
         dataSource={usersData?.data}
         rowKey="id"
       />
+      {/* <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>#id</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Roles</th>
+            <th>Last Login</th>
+            <th>Created At</th>
+            <th>Actions</th>
+            
+          </tr>
+          </thead>
+      </table> */}
       <Modal
         title={"Add New User"}
         ModalData={modalData}

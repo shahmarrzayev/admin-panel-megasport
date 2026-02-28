@@ -60,7 +60,7 @@ export default function Login() {
           </button>
         </form>
         <p className={styles.privacyPolicy}>
-          2025 ©Zirə Gülçülük. Bütün hüquqlar qorunur.
+          2025 ©Megasport. Bütün hüquqlar qorunur.
         </p>
       </div>
       <div className={styles.loginRight}>

@@ -11,6 +11,7 @@ import { useEffect, useState } from "react"
 export default function Header() {
   const navigate = useNavigate()
    const [profileDatas, setProfileDatas] = useState();
+// console.log(profileDatas);
 
   const getProfileData = async () => {
     try {
@@ -51,7 +52,7 @@ export default function Header() {
             <span className={styles.userName}>
               {profileDatas?.firstName} {profileDatas?.lastName}
             </span>
-            <span className={styles.userPosition}>----------</span>
+            <span className={styles.userPosition}>Admin</span>
           </div>
         </div>
         <span className={styles.logoutBtn} onClick={() => logoutFunc()}>

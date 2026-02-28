@@ -1,15 +1,30 @@
-.userPage{
+.userPage {
     background-color: rgba(255, 255, 255, 1);
-.activeStatus{
-    background-color: rgba(52, 199, 89, 1);
-    color: rgba(255, 255, 255, 1);
-    padding: 10px 20px;
-    border-radius: 8px;
+.table{
+    width: 100%;
+    thead{
+        position: sticky;
+    top: 70px;
+    z-index: 99;
+        background-color: #000;
+        tr{
+            th{
+                color: #fff;
+            }
+        }
+    }
 }
-.noActiveStatus{
-    background-color: rgba(255, 59, 48, 1);
-    color: rgba(255, 255, 255, 1);
-    padding: 10px 14px;
-    border-radius: 8px;
-}
+    .activeStatus {
+        background-color: rgba(52, 199, 89, 1);
+        color: rgba(255, 255, 255, 1);
+        padding: 10px 20px;
+        border-radius: 8px;
+    }
+
+    .noActiveStatus {
+        background-color: rgba(255, 59, 48, 1);
+        color: rgba(255, 255, 255, 1);
+        padding: 10px 14px;
+        border-radius: 8px;
+    }
 }

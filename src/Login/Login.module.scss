@@ -1,6 +1,7 @@
 .loginPage {
   width: 100%;
   display: flex;
+  flex-direction: row-reverse;
   .loginLeft {
     background-color: rgba(255, 255, 255, 1);
     width: 50%;
@@ -31,7 +32,7 @@
         border: none;
         border-radius: 12px;
         color: white;
-        background-color: rgba(66, 180, 47, 1);
+        background-color: rgb(0, 0, 0);
       }
     }
     .privacyPolicy{
@@ -42,7 +43,7 @@
     }
   }
   .loginRight {
-    background-color: rgba(66, 180, 47, 1);
+    background-color: rgb(14, 14, 14);
     width: 50%;
     height: 100vh;
     display: flex;

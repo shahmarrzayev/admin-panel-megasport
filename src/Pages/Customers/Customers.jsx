@@ -46,6 +46,8 @@ export default function Customers() {
           )}&page=${page}&perPage=2`
         );
       setAllCustomersData(res.data);
+      
+      
     } catch (error) {
       console.error(error);
     }

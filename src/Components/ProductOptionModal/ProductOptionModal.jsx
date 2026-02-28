@@ -4,12 +4,13 @@ import CloseIcon from "../../assets/Icons/CloseIcon";
 import InputComponent from "../InputComponent/InputComponent";
 
 export default function ProductOptionModal({
-  modalOptionsAreaInputsDatas,
+  modalVariantsAreaInputsDatas,
   modalActivePage,
   productFormik,   
-  findProductOptionItem,
+  findProductVariantItem,
 }) {
   const { closeOpenSecondModalFunc } = UseGlobalContext();
+console.log(modalVariantsAreaInputsDatas);
 
   return (
     <div className={styles.modal}>
@@ -21,23 +22,23 @@ export default function ProductOptionModal({
         </span>
    
         <form className={styles.form}>
-          {modalActivePage === "Options" && (
+          {modalActivePage === "Variants" && (
             <div className={styles.modalOptionsArea}>
               <div className={styles.optionsForm}>
-                {modalOptionsAreaInputsDatas.map((item) => (
+                {modalVariantsAreaInputsDatas.map((item) => (
                   <InputComponent key={item.id} inputData={item} />
                 ))}
               </div>
               <button
                 className="saveBtn" 
                 onClick={() => {
-                  if (findProductOptionItem?.id) {
-                    const updatedOptions = productFormik.values.options.map((option) =>
-                      option.id === findProductOptionItem?.id ? findProductOptionItem : option
+                  if (findProductVariantItem?.id) {
+                    const updatedVariants = productFormik.values.variants.map((variant) =>
+                      variant.id === findProductVariantItem?.id ? findProductVariantItem : variant
                     );
-                    productFormik.setFieldValue("options", updatedOptions);
+                    productFormik.setFieldValue("variants", updatedVariants);
                   } else {
-                    productFormik.setFieldValue("options", [...productFormik.values.options, findProductOptionItem]);
+                    productFormik.setFieldValue("variants", [...productFormik.values.variants, findProductVariantItem]);
                   }
                   closeOpenSecondModalFunc();
                 }}

@@ -7,7 +7,7 @@ import DescriptionOrTextArea from "../DescriptionOrTextArea/DescriptionOrTextAre
 import { Switch, Table } from "antd";
 import EditIcon from "../../assets/Icons/EditIcon";
 import DeleteIcon from "../../assets/Icons/DeleteIcon";
-import ProductOptionModal from "../ProductOptionModal/ProductOptionModal";
+import ProductVariantModal from "../ProductOptionModal/ProductOptionModal";
 import { useEffect, useState } from "react";
 import megaSportAdminPanel from "../../Helpers/Helpers";
 import url from "../../ApiUrls/Url";
@@ -17,7 +17,6 @@ export default function ProductModal({
   modalActivePage,
   modalPageNameList,
   addProductImages,
-  deleteProductImage,
   onClickChangeModalPage,
   activeLang,
   setActiveLang,
@@ -31,10 +30,16 @@ export default function ProductModal({
     closeOpenSecondModalFunc,
   } = UseGlobalContext();
 
-  const [findProductOptionItem, setFindProductOptionItem] = useState({});
+  const [findProductVariantItem, setfindProductVariantItem] = useState({});
   const [categorySearchData, setCategorySearchData] = useState([]);
   const [searchInpValue, setSearchInpValue] = useState("");
   const [showCategoryResultArea, setShowCategoryResultArea] = useState(false);
+  const [colorImageForm, setColorImageForm] = useState({
+    color: "",
+    colorCode: "",
+    images: [],
+  });
+  const [editingColorImageIndex, setEditingColorImageIndex] = useState(null);
 
   const categorySearchFunc = async (data) => {
     try {
@@ -50,22 +55,128 @@ export default function ProductModal({
   // console.log("category inp search value=", searchInpValue);
   // console.log("category search result=", categorySearchData);
 
-  const findProductOptionFunc = (optionId) => {
-    if (!optionId) {
-      setFindProductOptionItem({});
+  const findProductVariantFunc = (variantId) => {
+    if (!variantId) {
+      setfindProductVariantItem({});
       return;
     }
-    const findProductOption = productFormik.values.options.find(
-      (option) => option.id === optionId
+    const findProductVariant = productFormik.values.variants.find(
+      (variant) => variant.id === variantId 
     );
-    setFindProductOptionItem(findProductOption);
+    setfindProductVariantItem(findProductVariant);
   };
 
-  const handleProductOptionChange = (field, value) => {
-    setFindProductOptionItem((prev) => ({
+  const handleProductVariantChange = (field, value) => {
+    setfindProductVariantItem((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const resetColorImageForm = () => {
+    setColorImageForm({
+      color: "",
+      colorCode: "",
+      images: [],
+    });
+    setEditingColorImageIndex(null);
+  };
+
+  const handleColorImageChange = (field, value) => {
+    setColorImageForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const addColorImages = async (event) => {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await megaSportAdminPanel
+          .api()
+          .post(url.fileUpload("product"), formData);
+
+        if (res?.data?.name) {
+          setColorImageForm((prev) => ({
+            ...prev,
+            images: [...(prev.images || []), res.data.name],
+          }));
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+      }
+    }
+  };
+
+  const deleteColorImageFromForm = async (imageName) => {
+    try {
+      await megaSportAdminPanel
+        .api()
+        .delete(url.fileDelete(imageName, "product"));
+
+      setColorImageForm((prev) => ({
+        ...prev,
+        images: prev.images.filter((img) => img !== imageName),
+      }));
+    } catch (error) {
+      console.log("Delete image error:", error);
+    }
+  };
+
+  const saveColorImage = () => {
+    const cleanedImages = (colorImageForm.images || []).filter(
+      (img) => img && img.trim().length > 0
+    );
+
+    if (!colorImageForm.color || !colorImageForm.colorCode || !cleanedImages.length) {
+      return;
+    }
+
+    const newItem = {
+      color: colorImageForm.color,
+      colorCode: colorImageForm.colorCode,
+      images: cleanedImages,
+    };
+
+    const current = productFormik.values.colorImages || [];
+
+    if (editingColorImageIndex !== null) {
+      const updated = [...current];
+      updated[editingColorImageIndex] = newItem;
+      productFormik.setFieldValue("colorImages", updated);
+    } else {
+      productFormik.setFieldValue("colorImages", [...current, newItem]);
+    }
+
+    resetColorImageForm();
+  };
+
+  const editColorImage = (index) => {
+    const item = productFormik.values.colorImages?.[index];
+    if (!item) return;
+
+    setColorImageForm({
+      color: item.color || "",
+      colorCode: item.colorCode || "",
+      images: item.images && item.images.length ? [...item.images] : [],
+    });
+    setEditingColorImageIndex(index);
+  };
+
+  const deleteColorImage = (index) => {
+    const current = productFormik.values.colorImages || [];
+    const updated = current.filter((_, i) => i !== index);
+    productFormik.setFieldValue("colorImages", updated);
+
+    if (editingColorImageIndex === index) {
+      resetColorImageForm();
+    }
   };
 
   useEffect(() => {
@@ -79,75 +190,172 @@ export default function ProductModal({
   }, [findProductItem]);
 
 
-  const modalOptionsAreaInputsDatas = [
+  const modalVariantsAreaInputsDatas = [
     {
       id: 7,
-      label: "Value",
+      label: "Color",
       inputType: "text",
-      name: "value",
-      inpValue: findProductOptionItem.value || "",
-      onChange: (e) => handleProductOptionChange("value", e.target.value),
+      name: "color",
+      inpValue: findProductVariantItem?.color || "",
+      onChange: (e) => handleProductVariantChange("color", e.target.value),
+    },
+    {
+      id: 77,
+      label: "colorCode",
+      inputType: "text",
+      name: "colorCode",
+      inpValue: findProductVariantItem?.colorCode || "",
+      onChange: (e) => handleProductVariantChange("colorCode", e.target.value),
     },
     {
       id: 8,
-      label: "Price",
+      label: "size",
       inputType: "text",
-      name: "price",
-      inpValue: findProductOptionItem.price || "",
-      onChange: (e) => handleProductOptionChange("price", e.target.value),
+      name: "size",
+      inpValue: findProductVariantItem?.size || "",
+      onChange: (e) => handleProductVariantChange("size", e.target.value),
     },
-    {
-      id: 9,
-      label: "Discount Price",
-      inputType: "text",
-      isDisabled: true,
-      name: "discountedPrice",
-      inpValue: findProductOptionItem.discountedPrice || 0,
-    },
+
     {
       id: 10,
       label: "Stock",
       inputType: "text",
       name: "stock",
-      inpValue: findProductOptionItem.stock || "",
-      onChange: (e) => handleProductOptionChange("stock", e.target.value),
+      inpValue: findProductVariantItem?.stock || "",
+      onChange: (e) => handleProductVariantChange("stock", e.target.value),
+    },
+    {
+      id: 20,
+      label: "sku",
+      inputType: "text",
+      name: "sku",
+      inpValue: findProductVariantItem?.sku || "",
+      onChange: (e) => handleProductVariantChange("sku", e.target.value),
+    },
+    {
+      id: 21,
+      label: "barcode",
+      inputType: "text",
+      name: "barcode",
+      inpValue: findProductVariantItem?.barcode || "",
+      onChange: (e) => handleProductVariantChange("barcode", e.target.value),
+    },
+     {
+      id:22,
+      label: "Status",
+      inputType:"switch",
+      name: "isActive",
     },
   ];
-  const productOptionsTable = [
+  const productVariantsTable = [
     {
-      title: "Value",
-      dataIndex: "value",
-      key: "value",
+      title: "Color",
+      dataIndex: "color",
+      key: "color",
     },
     {
-      title: "Price",
-      dataIndex: "price",
-      key: "price",
+      title: "Color Code",
+      dataIndex: "colorCode",
+      key: "colorCode",
     },
     {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
     },
+    
     {
       title: "Actions",
       key: "actions",
-      render: (record) => (
+      render: (_, record, index) => (
         <div className="icon-list">
           <span
             onClick={() => {
               closeOpenSecondModalFunc();
-              findProductOptionFunc(record.id);
+              // Eğer id varsa id'ye göre bul, yoksa index'e göre kullan
+              if (record?.id) {
+                findProductVariantFunc(record.id);
+              } else {
+                const currentVariant =
+                  productFormik.values.variants?.[index] || {};
+                setfindProductVariantItem(currentVariant);
+              }
             }}
           >
             <EditIcon />
           </span>
           <span
             onClick={() => {
-              const filteredOptions = productFormik.values.options.filter(
-                (option) => option.id !== record.id
-              );
-              productFormik.setFieldValue("options", filteredOptions);
+              const variants = productFormik.values.variants || [];
+              let filteredVariants = variants;
+
+              if (record?.id) {
+                // Backend'den gelen id varsa ona göre sil
+                filteredVariants = variants.filter(
+                  (option) => option.id !== record.id
+                );
+              } else {
+                // Henüz id yoksa index'e göre sil
+                filteredVariants = variants.filter((_, i) => i !== index);
+              }
+
+              productFormik.setFieldValue("variants", filteredVariants);
+            }}
+          >
+            <DeleteIcon />
+          </span>
+        </div>
+      ),
+    },
+  ];
+
+  const colorImagesTable = [
+    {
+      title: "Color",
+      dataIndex: "color",
+      key: "color",
+    },
+    {
+      title: "Color Code",
+      dataIndex: "colorCode",
+      key: "colorCode",
+    },
+    {
+      title: "Images Count",
+      key: "imagesCount",
+      render: (record) => record?.images?.length || 0,
+    },
+  {
+  title: "Images",
+  key: "images",
+  render: (_, record) => (
+    <div className="icon-list">
+      {record.images?.map((img, index) => (
+       <img
+       key={index}
+       style={{width:"30px",height:"30px"}}
+                          src={`${megaSportAdminPanel.baseUrlImage}/product/${img}`}
+                          alt=""
+                        />
+      ))}
+    </div>
+  ),
+},
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, __, index) => (
+        <div className="icon-list">
+          <span
+            onClick={() => {
+              editColorImage(index);
+            }}
+          >
+            <EditIcon />
+          </span>
+          <span
+            onClick={() => {
+              deleteColorImage(index);
             }}
           >
             <DeleteIcon />
@@ -192,7 +400,8 @@ export default function ProductModal({
                   <InputComponent inputData={modalInputsData.slug} />
                   <div className={styles.categoryInpWrapper}>
                     <span className="inputName">Category</span>
-                    <input
+                    <input 
+                    readOnly
                       className="input"
                       placeholder="Kateqoriya axtarın"
                       value={searchInpValue}
@@ -295,7 +504,8 @@ export default function ProductModal({
                   }
                 />
 
-                <div className={styles.imgAddAreaWrapper}>
+{/* Add products images */}
+                {/* <div className={styles.imgAddAreaWrapper}>
                   <label>Image Upload</label>
                   <div className={styles.imgAddWrapper}>
                     <input
@@ -306,7 +516,9 @@ export default function ProductModal({
                     <ImageAddIcon />
                     Image Upload
                   </div>
-                  <div className={styles.productImagesArea}>
+                
+                </div> */}
+                  {/* <div className={styles.productImagesArea}>
                     {productFormik.values.images.map((img, index) => (
                       <div key={index} className={styles.productImageWrapper}>
                         <img
@@ -321,8 +533,7 @@ export default function ProductModal({
                         </span>
                       </div>
                     ))}
-                  </div>
-                </div>
+                  </div> */}
               </div>
               <button type="submit" className="saveBtn">
                 Save
@@ -330,22 +541,107 @@ export default function ProductModal({
             </div>
           )}
 
-          {modalActivePage === "Options" && (
+          {modalActivePage === "Color Images" && (
+            <div className={styles.modalAddProductArea}>
+              <div className={styles.addProductForm}>
+                <div className={styles.nameSlugCategoryInputs}>
+                  <div>
+                    <span className="inputName">Color</span>
+                    <input
+                      className="input"
+                      type="text"
+                      placeholder="Color name"
+                      value={colorImageForm.color}
+                      onChange={(e) =>
+                        handleColorImageChange("color", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="inputName">Color Code</span>
+                    <input
+                      className="input"
+                      type="text"
+                      placeholder="#000000"
+                      value={colorImageForm.colorCode}
+                      onChange={(e) =>
+                        handleColorImageChange("colorCode", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.imgAddAreaWrapper}>
+                  <label>Image Upload</label>
+                  <div className={styles.imgAddWrapper}>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={addColorImages}
+                      className={styles.imgInput}
+                    />
+                    <ImageAddIcon />
+                    Image Upload
+                  </div>
+                  {colorImageForm.images && colorImageForm.images.length > 0 && (
+                    <div className={styles.productImagesArea}>
+                      {colorImageForm.images.map((img, index) => (
+                        <div key={index} className={styles.productImageWrapper}>
+                          <img
+                            src={`${megaSportAdminPanel.baseUrlImage}/product/${img}`}
+                            alt=""
+                          />
+                          <span
+                            onClick={() => deleteColorImageFromForm(img)}
+                            className={styles.deleteImage}
+                          >
+                            <CloseIcon />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="addButtonProducts"
+                  onClick={saveColorImage}
+                >
+                  {editingColorImageIndex !== null
+                    ? "Update Color Images"
+                    : "Add Color Images"}
+                </button>
+                 <button type="submit" className="saveBtn">
+                Save
+              </button>
+              </div>
+
+              <Table
+                className="options-table"
+                columns={colorImagesTable}
+                dataSource={productFormik?.values?.colorImages || []}
+                rowKey={(_, index) => index}
+              />
+            </div>
+          )}
+
+          {modalActivePage === "Variants" && (
             <>
               <Table
                 className="options-table"
-                columns={productOptionsTable}
-                dataSource={productFormik?.values?.options || []}
+                columns={productVariantsTable}
+                dataSource={productFormik?.values?.variants || []}
                 rowKey="id"
               />
               <span
                 className={styles.addOptionsBtn}
                 onClick={() => {
                   closeOpenSecondModalFunc();
-                  findProductOptionFunc();
+                  findProductVariantFunc();
                 }}
               >
-                Add New Option +
+                Add New Variant +
               </span>
               <button type="submit" className="saveBtn">
                 Bütün məhsuları yadda saxla
@@ -378,15 +674,15 @@ export default function ProductModal({
         </form>
       </div>
       {secondShowHiddenModal && (
-        <ProductOptionModal
-          modalOptionsAreaInputsDatas={modalOptionsAreaInputsDatas}
+        <ProductVariantModal
+          modalVariantsAreaInputsDatas={modalVariantsAreaInputsDatas}
           modalActivePage={modalActivePage}
           modalPageNameList={modalPageNameList}
           onClickChangeModalPage={onClickChangeModalPage}
           activeLang={activeLang}
           setActiveLang={setActiveLang}
           productFormik={productFormik}
-          findProductOptionItem={findProductOptionItem}
+          findProductVariantItem={findProductVariantItem}
         />
       )}
     </div>

@@ -25,6 +25,11 @@
     color: rgba(23, 23, 23, 1);
     cursor: pointer;
     transition: 0.5s ease;
+    svg{
+      path{
+        stroke: #000;
+      }
+    }
     .iconName{
         display: flex;
         align-items: center;

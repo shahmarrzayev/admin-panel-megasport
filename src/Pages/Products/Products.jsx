@@ -27,7 +27,7 @@ export default function Products() {
   const sortByParam = searchParams.get("sortBy") || "createdAt";
   const directionParam = searchParams.get("direction") || "ASC";
   const [modalActivePage, setModalActivePage] = useState("Add Product");
-  const modalPageNameList = ["Add Product", "Options", "Seo"];
+  const modalPageNameList = ["Add Product", "Color Images", "Variants", "Atributes", "Seo"];
   const [activeLang, setActiveLang] = useState("az");
   const [allProductsData, setAllProductsData] = useState([]);
   const [findProductItem, setFindProductItem] = useState();
@@ -62,10 +62,12 @@ export default function Products() {
         .get(
           `${url.productsGetAll(
             sortByParam,
-            directionParam 
+            directionParam
           )}&page=${page}&perPage=30`
         );
       setAllProductsData(resData.data);
+      console.log("Products Data",resData.data.data[0]);
+      
     } catch (error) {
       console.log(error);
     }
@@ -101,22 +103,36 @@ export default function Products() {
         ru: findProductItem?.description?.ru || "",
       },
       slug: findProductItem?.slug || "",
-      // category: findProductItem?.name?.az || "",
-      // category: findProductItem?.category?._id || "",
       category: findProductItem?.categoryId || "",
       isActive: findProductItem?.isActive || false,
       attributes: findProductItem?.attributes || [],
-      images: findProductItem?.images || [],
-      options:
-        findProductItem?.options?.length > 0
-          ? findProductItem?.options?.map((option) => ({
-              id: option?.id || "",
-              value: option?.value || "",
-              price: option?.price || "",
-              discountedPrice: option?.discountedPrice || 0,
-              stock: option?.stock || "",
-              image: option?.image || "",
-            }))
+      variants:
+        findProductItem?.variants?.length > 0
+          ? findProductItem?.variants?.map((variant) => ({
+            color: variant?.color || "",
+            colorCode: variant?.colorCode || "",
+            size: variant?.size || "",
+            stock: variant?.stock || "",
+            sku: variant?.sku || "",
+            barcode: variant?.barcode || "",
+            isActive: variant?.isActive || false,
+          }))
+          : [],
+      colorImages:
+        findProductItem?.colorImages?.length > 0
+          ? findProductItem?.colorImages?.map((colorImg) => ({
+            color: colorImg?.color || "",
+            colorCode: colorImg?.colorCode || "",
+            images: colorImg?.images || [],
+
+          }))
+          : [],
+      attributes:
+        findProductItem?.attributes?.length > 0
+          ? findProductItem?.attributes?.map((atribute) => ({
+            attributeId: atribute?.attributeId || "",
+            optionId: atribute?.optionId || "",
+          }))
           : [],
 
       seo: {
@@ -148,10 +164,10 @@ export default function Products() {
       const payload = {
         ...formValues,
         categoryId: formValues.category,
-        options: formValues.options?.map((option) => ({
-          ...option,
-          price: Number(option.price),
-          stock: Number(option.stock),
+        variants: formValues.variants?.map((variant) => ({
+          ...variant,
+          price: Number(variant.price),
+          stock: Number(variant.stock),
         })),
       };
       if (findProductItem) {
@@ -267,7 +283,7 @@ export default function Products() {
       key: "images",
       render: (data) =>
         data.map((imageName) => (
-          <img style={{width:"15px", height:"15px"}} src={`${megaSportAdminPanel.baseUrlImage}product/${imageName}`} />
+          <img style={{ width: "15px", height: "15px" }} src={`${megaSportAdminPanel.baseUrlImage}product/${imageName}`} />
         )),
     },
     {
@@ -394,21 +410,19 @@ export default function Products() {
               <div className="pageHeaderFilterContent">
                 <span
                   onClick={() => handleSortChange("createdAt", "ASC")}
-                  className={`pageHeaderFilterType ${
-                    sortByParam === "createdAt" && directionParam === "ASC"
-                      ? "activeBtn"
-                      : ""
-                  }`}
+                  className={`pageHeaderFilterType ${sortByParam === "createdAt" && directionParam === "ASC"
+                    ? "activeBtn"
+                    : ""
+                    }`}
                 >
                   Yaranma tarixinə görə <ArrowDownIcon />
                 </span>
                 <span
                   onClick={() => handleSortChange("createdAt", "DESC")}
-                  className={`pageHeaderFilterType ${
-                    sortByParam === "createdAt" && directionParam === "DESC"
-                      ? "activeBtn"
-                      : ""
-                  }`}
+                  className={`pageHeaderFilterType ${sortByParam === "createdAt" && directionParam === "DESC"
+                    ? "activeBtn"
+                    : ""
+                    }`}
                 >
                   Yaranma tarixinə görə <ArrowUpIcon />
                 </span>

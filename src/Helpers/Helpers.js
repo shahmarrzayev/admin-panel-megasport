@@ -1,7 +1,7 @@
 class adminPanel {
   constructor() {
-    this.baseUrl = "https://api.ziragul.az/api/";
-    this.baseUrlImage= "https://storage.ziragul.az/";
+    this.baseUrl = "https://api.megasport.looptech.az/api/";
+    this.baseUrlImage= "https://storage.megasport.looptech.az/";
     this.count = 0;
   }
   api() {
