@@ -15,6 +15,8 @@ import Attributes from "./Pages/Attributes/Attributes";
 import Discounts from "./Pages/Discounts/Discounts";
 import Orders from "./Pages/Orders/Orders";
 import OrderView from "./Pages/OrderView/OrderView";
+import Homepage from "./Pages/OtherPages/Homepage";
+import OtherPages from "./Pages/OtherPages/OtherPages";
 
 const router = createBrowserRouter([
   {
@@ -56,6 +58,14 @@ const router = createBrowserRouter([
       {
         path: "orders",
         element: <Orders />,
+      },
+      {
+        path: "homepages",
+        element: <Homepage />,
+      },
+      {
+        path: "pages",
+        element: <OtherPages />,
       },
       {
         path: "orders/view/:id",

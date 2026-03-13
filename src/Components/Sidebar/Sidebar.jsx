@@ -200,6 +200,34 @@ export default function Sidebar() {
             </>
           )}
         </NavLink>
+        <NavLink
+          to="homepages"
+          className={({ isActive }) => ` ${isActive ? styles.active : ""}`}
+        >
+          {({ isActive }) => (
+            <>
+              <CategoriesIcon
+                color={isActive ? "rgba(66, 180, 47, 1)" : "#6A6A6A"}
+              />
+
+
+              Home Page
+            </>
+          )}
+        </NavLink>
+        <NavLink
+          to="pages"
+          className={({ isActive }) => ` ${isActive ? styles.active : ""}`}
+        >
+          {({ isActive }) => (
+            <>
+              <AttributesIcon
+                color={isActive ? "rgba(66, 180, 47, 1)" : "#6A6A6A"}
+              />
+              Pages
+            </>
+          )}
+        </NavLink>
       </div>
       <div
         onClick={() => onClickShowHiddenPage("SalesMarketing")}
