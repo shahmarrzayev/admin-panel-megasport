@@ -29,7 +29,53 @@ export default function Categories() {
     useState(false);
   const [deleteCategoryId, setDeleteCategoryId] = useState(null);
   const [searchParams] = useSearchParams();
+  const [categoryActiveTab, setCategoryActiveTab] = useState("General");
+  const [externalSearchInp, setExternalSearchInp] = useState("");
+  const [externalSearchData, setExternalSearchData] = useState([]);
+  const [showExternalResults, setShowExternalResults] = useState(false);
   const currentPage = Number(searchParams.get("page")) || 1;
+
+  const genderDatas = [
+    {
+      id: 1,
+      name: "KİŞİ"
+    },
+    {
+      id: 2,
+      name: "QADIN"
+    },
+    {
+      id: 3,
+      name: "UNİSEX"
+    },
+    {
+      id: 4,
+      name: "UŞAQ"
+    },
+    {
+      id: 5,
+      name: "ACCESSORIES"
+    },
+    {
+      id: 6,
+      name: "GƏNC UNİSEX"
+    },
+  ]
+  const targetBrandDatas = [
+    {
+      id: 1,
+      name: "TİMBERLAND"
+    },
+    {
+      id: 2,
+      name: "NAPAPIJRI"
+    },
+    {
+      id: 3,
+      name: "THE NORTH FACE"
+    },
+
+  ]
 
   const handleSearch = (e) => {
     setSearchValue(e.target.value);
@@ -55,6 +101,54 @@ export default function Categories() {
       console.log(error);
     }
   };
+
+  const externalCategorySearchFunc = async (searchTerm) => {
+    try {
+      const resData = await megaSportAdminPanel
+        .api()
+        .get(url.categorySearchExternal(searchTerm));
+      setExternalSearchData(resData.data.data || []);
+      console.log("external search data:", resData.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const addExternalCategoryId = (item) => {
+    console.log("selected external item:", item);
+
+    const code =
+      item?.externalCategoryCode ?? item?.code ?? item?.id ?? item?.externalCategoryId;
+    if (!code) return;
+
+    const name = item?.name?.az || item?.name || item?.title || String(code);
+
+    const current = category.values.externalCategories || [];
+    if (current.some((ext) => ext?.code === code || ext === code)) return;
+
+    const normalizedCurrent = current.map((ext) =>
+      typeof ext === "string" || typeof ext === "number"
+        ? { code: ext, name: String(ext) }
+        : ext
+    );
+
+    category.setFieldValue("externalCategories", [
+      ...normalizedCurrent,
+      { code, name },
+    ]);
+  };
+
+  const removeExternalCategoryId = (codeToRemove) => {
+    const current = category.values.externalCategories || [];
+    const updated = current
+      .map((ext) =>
+        typeof ext === "string" || typeof ext === "number"
+          ? { code: ext, name: String(ext) }
+          : ext
+      )
+      .filter((ext) => ext.code !== codeToRemove);
+    category.setFieldValue("externalCategories", updated);
+  };
   // console.log("categories curent page --", currentPage);
 
   const category = useFormik({
@@ -73,6 +167,27 @@ export default function Categories() {
       parentCategory: findCategory?.parentCategory?.name?.az || "",
       sortOrder: findCategory?.sortOrder ?? "",
       image: findCategory?.image || "",
+      targetGender: findCategory?.targetGender || "",
+      targetBrand: findCategory?.targetBrand || "",
+      externalCategories:
+        findCategory?.externalCategories?.length > 0
+          ? findCategory.externalCategories.map((ext) => {
+              if (
+                typeof ext === "string" ||
+                typeof ext === "number"
+              ) {
+                return { code: ext, name: String(ext) };
+              }
+              const code =
+                ext.code ?? ext.externalCategoryCode ?? ext.id ?? ext.externalCategoryId;
+              const name =
+                ext.name?.az ||
+                ext.name ||
+                ext.title ||
+                (code ? String(code) : "");
+              return { code, name };
+            })
+          : [],
       isActive: findCategory?.isActive || false,
     },
     enableReinitialize: true,
@@ -80,12 +195,21 @@ export default function Categories() {
       if (parentCategorySearchData.length === 0) {
         formValues.parentCategory = null;
       }
+      const payload = {
+        ...formValues,
+        externalCategories: (formValues.externalCategories || []).map((ext) =>
+          typeof ext === "string" || typeof ext === "number"
+            ? ext
+            : ext.code
+        ),
+      };
+
       if (findCategory) {
         await megaSportAdminPanel
           .api()
-          .put(url.categoryUpdate(findCategory.id), formValues);
+          .put(url.categoryUpdate(findCategory.id), payload);
       } else {
-        await megaSportAdminPanel.api().post(url.categoryAdd, formValues);
+        await megaSportAdminPanel.api().post(url.categoryAdd, payload);
       }
       getAllCategoriesDatas(currentPage);
       category.resetForm();
@@ -181,6 +305,7 @@ export default function Categories() {
           <span
             onClick={() => {
               findCategoryFunc(record.id);
+              setCategoryActiveTab("General");
               closeOpenModalFunc();
             }}
           >
@@ -228,7 +353,7 @@ export default function Categories() {
     } catch (error) {
       console.log(error);
     }
-  }; 
+  };
 
   return (
     <div className={styles.categoriesPageWrapper}>
@@ -247,6 +372,7 @@ export default function Categories() {
           <button
             onClick={() => {
               setFindCategory(null);
+              setCategoryActiveTab("General");
               closeOpenModalFunc();
             }}
             className="pageHeaderAddBtn"
@@ -267,6 +393,25 @@ export default function Categories() {
               <CloseIcon />
             </span>
             <form onSubmit={category.handleSubmit}>
+              <div className={styles.modalTabList}>
+                <span
+                  className={`${styles.modalTab} ${categoryActiveTab === "General" ? styles.activeTab : ""
+                    }`}
+                  onClick={() => setCategoryActiveTab("General")}
+                >
+                  General
+                </span>
+                <span
+                  className={`${styles.modalTab} ${categoryActiveTab === "External Categories" ? styles.activeTab : ""
+                    }`}
+                  onClick={() => setCategoryActiveTab("External Categories")}
+                >
+                  External Categories
+                </span>
+              </div>
+
+              {categoryActiveTab === "General" && (
+                <>
               <div className={styles.nameSlugWrapper}>
                 <div className={styles.nameInputWrapper}>
                   <span className="inputName">Name</span>
@@ -275,9 +420,8 @@ export default function Categories() {
                       <span
                         key={index}
                         onClick={() => setActiveLang(lang)}
-                        className={`lang ${
-                          activeLang === lang ? "activeLang" : ""
-                        }`}
+                        className={`lang ${activeLang === lang ? "activeLang" : ""
+                          }`}
                       >
                         {lang.toLocaleUpperCase()}
                       </span>
@@ -308,9 +452,8 @@ export default function Categories() {
                     <span
                       key={index}
                       onClick={() => setActiveLang(lang)}
-                      className={`lang ${
-                        activeLang === lang ? "activeLang" : ""
-                      }`}
+                      className={`lang ${activeLang === lang ? "activeLang" : ""
+                        }`}
                     >
                       {lang.toLocaleUpperCase()}
                     </span>
@@ -362,7 +505,7 @@ export default function Categories() {
                         if (
                           findCategory &&
                           parentCategorySearchInp ===
-                            (findCategory.parentCategory?.name?.az || "")
+                          (findCategory.parentCategory?.name?.az || "")
                         ) {
                           return null;
                         }
@@ -451,6 +594,36 @@ export default function Categories() {
                   </div>
                 )}
               </div>
+              <div className={styles.parentCategoryAndSortOrderInpWraper}>
+
+                <div className={styles.genderSelect}>
+                  <span className="inputName">Gender</span>
+                  <select name="targetGender"
+                    value={category.values.targetGender}
+                    onChange={category.handleChange}>
+                      <option value=""></option>
+                    {genderDatas.map((gen) => (
+                      <option key={gen.id} value={gen.name}>
+                        {gen.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.brandSelect}>
+                  <span className="inputName">Brand</span>
+                  <select name="targetBrand"
+                    value={category.values.targetBrand}
+                    onChange={category.handleChange}>
+                      <option value=""></option>
+                    {targetBrandDatas.map((brand) => (
+                      <option key={brand.id} value={brand.name}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               <div className={styles.switchInput}>
                 <span className="inputName">isActive</span>
                 <Switch
@@ -460,6 +633,107 @@ export default function Categories() {
                   }
                 />
               </div>
+              </>
+              )}
+
+              {categoryActiveTab === "External Categories" && (
+                <>
+                  <div className={styles.externalCategoriesWrapper}>
+                    <span className="inputName">Search External Categories</span>
+                    <input
+                      className={styles.categoryInput}
+                      value={externalSearchInp}
+                      placeholder="External category search..."
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setExternalSearchInp(val);
+                        if (val.trim().length > 0) {
+                          externalCategorySearchFunc(val);
+                          setShowExternalResults(true);
+                        } else {
+                          setExternalSearchData([]);
+                          setShowExternalResults(false);
+                        }
+                      }}
+                    />
+                    {externalSearchInp.length > 0 && (
+                      <span
+                        onClick={() => {
+                          setExternalSearchInp("");
+                          setShowExternalResults(false);
+                          setExternalSearchData([]);
+                        }}
+                        className={styles.resetInput}
+                      >
+                        <CloseIcon />
+                      </span>
+                    )}
+                    {showExternalResults && (
+                      <div className={styles.searchResultArea}>
+                        {externalSearchInp.length > 0 &&
+                          externalSearchData.length > 0 &&
+                          externalSearchData.map((item) => (
+                            <span
+                              key={item.id || item.externalCategoryId}
+                              className={styles.parentCategoryName}
+                              onClick={() => addExternalCategoryId(item)}
+                            >
+                              {item.name?.az ||
+                                item.name ||
+                                item.title ||
+                                (item.id || item.externalCategoryId)}
+                            </span>
+                          ))}
+                        {externalSearchInp.length > 0 &&
+                          externalSearchData.length === 0 && (
+                            <div className={styles.noCategory}>
+                              <span
+                                style={{
+                                  color: "red",
+                                  paddingLeft: "10px",
+                                  fontWeight: "800",
+                                }}
+                              >
+                                {externalSearchInp}
+                              </span>{" "}
+                              adında external kateqoriya yoxdur
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.selectedExternalCategories}>
+                    <span className="inputName">Selected External Categories</span>
+                    <div className={styles.selectedExternalCategoriesList}>
+                      {(category.values.externalCategories || []).map((ext) => {
+                        const code =
+                          typeof ext === "string" || typeof ext === "number"
+                            ? ext
+                            : ext.code;
+                        const name =
+                          typeof ext === "string" || typeof ext === "number"
+                            ? ext
+                            : ext.name;
+                        return (
+                          <span
+                            key={code}
+                            className={styles.selectedExternalCategoryItem}
+                          >
+                            <span>{name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeExternalCategoryId(code)}
+                            >
+                              <CloseIcon />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <button className="saveBtn" type="submit">
                 Save

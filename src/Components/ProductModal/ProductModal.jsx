@@ -240,12 +240,16 @@ export default function ProductModal({
       inpValue: findProductVariantItem?.barcode || "",
       onChange: (e) => handleProductVariantChange("barcode", e.target.value),
     },
-     {
-      id:22,
-      label: "Status",
-      inputType:"switch",
-      name: "isActive",
-    },
+    //  {
+    //   id:22,
+    //   label: "Status",
+    //   inputType:"switch",
+    //   name: "isActive",
+    //   inpValue :findProductVariantItem?.isActive,
+    //               onChange:(e)=>{(checked) =>
+    //                 findProductVariantItem.setFieldValue("isActive", checked)
+    //               }
+    // },
   ];
   const productVariantsTable = [
     {
@@ -290,12 +294,11 @@ export default function ProductModal({
               let filteredVariants = variants;
 
               if (record?.id) {
-                // Backend'den gelen id varsa ona göre sil
+
                 filteredVariants = variants.filter(
                   (option) => option.id !== record.id
                 );
               } else {
-                // Henüz id yoksa index'e göre sil
                 filteredVariants = variants.filter((_, i) => i !== index);
               }
 

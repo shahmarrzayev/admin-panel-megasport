@@ -2,6 +2,7 @@ import styles from "./ProductOptionModal.module.scss";
 import { UseGlobalContext } from "../../Context/GlobalContext";
 import CloseIcon from "../../assets/Icons/CloseIcon";
 import InputComponent from "../InputComponent/InputComponent";
+import { Switch } from "antd";
 
 export default function ProductOptionModal({
   modalVariantsAreaInputsDatas,
@@ -28,6 +29,15 @@ console.log(modalVariantsAreaInputsDatas);
                 {modalVariantsAreaInputsDatas.map((item) => (
                   <InputComponent key={item.id} inputData={item} />
                 ))}
+                  <div className={styles.switchInput}>
+                <span className="inputName">isActive</span>
+                <Switch
+                  // checked={category.values.isActive}
+                  onChange={(checked) =>
+                    category.setFieldValue("isActive", checked)
+                  }
+                />
+              </div>
               </div>
               <button
                 className="saveBtn" 

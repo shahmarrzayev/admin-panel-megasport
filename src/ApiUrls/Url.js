@@ -16,6 +16,8 @@ const url = {
   customerChangePassword: (id) => `internal/customers/${id}/change-password`,
   categoriesGetAllDatas: "internal/category",
   categorySearch: (value, id) => `internal/category/search/${value}?id=${id}`,
+  categorySearchExternal: (value) =>
+    `internal/category/search-external/${value}`,
   categoryAdd: "internal/category",
   categoryUpdate: (id) => `internal/category/${id}`,
   categoryDelete: (id) => `internal/category/${id}`,
