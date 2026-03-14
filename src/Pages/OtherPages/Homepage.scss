@@ -151,6 +151,7 @@ margin-bottom: 15px;
                 .selectedProducts{
                     width: 45%;
                     display: flex;
+                    position: relative;
                     .searchInputs{
                         width: 30%;
                         input{
@@ -159,7 +160,14 @@ margin-bottom: 15px;
                         }
                     }
                     .selectionProducts{
-                        width: 65%;
+                        position: absolute;
+                        top: 100%;
+                        left: 15%;
+                        width: 50%;
+                        //  width: 50%;
+                                height: 70px;
+                                overflow-y: scroll;
+                                background-color: gray;
                         div{
                             width: 100%;
                             display: flex;
@@ -169,6 +177,12 @@ margin-bottom: 15px;
                                 width: 15px; 
                                 height: 15px;
                             }
+                        }
+                        .selectionProductItem{
+                            width: 100%;
+                            // height: 250px;
+                            overflow-y: scroll;
+                            // background-color: red;
                         }
                     }
                 }

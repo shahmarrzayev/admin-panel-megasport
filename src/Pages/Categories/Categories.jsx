@@ -215,6 +215,8 @@ export default function Categories() {
       category.resetForm();
       setFindCategory(null);
       closeOpenModalFunc();
+      console.log(category.values);
+      
     },
   });
 
@@ -669,7 +671,7 @@ export default function Categories() {
                       </span>
                     )}
                     {showExternalResults && (
-                      <div className={styles.searchResultArea}>
+                      <div className={`${styles.searchResultArea} ${styles.externalSearch}`  }>
                         {externalSearchInp.length > 0 &&
                           externalSearchData.length > 0 &&
                           externalSearchData.map((item) => (

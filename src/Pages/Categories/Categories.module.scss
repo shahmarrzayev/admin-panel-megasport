@@ -18,6 +18,22 @@
       z-index: 99999999;
       border-radius: 12px;
       padding: 20px;
+      .modalTabList{
+        display: flex;
+        gap: 10px;
+        .modalTab{
+          border: 1px solid black;
+          border-radius: 5px;
+          padding: 5px 10px;
+          background-color: rgb(255, 255, 255);
+          color: rgb(0, 0, 0);
+            cursor: pointer;
+        }
+        .activeTab{
+ background-color: rgb(0, 0, 0);
+          color: white;
+        }
+      }
       .closeIcon {
         position: absolute;
         top: 10px;
@@ -184,12 +200,28 @@
             }
           }
         }
+        .externalSearch{
+          position: static;
+          margin-top: 10px;
+        }
       .resetInput{
         position: absolute;
         top: 50px;
         right:10px;
         cursor: pointer;
       }
+      }
+      .selectedExternalCategoriesList{
+        background-color: red;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        .selectedExternalCategoryItem{
+          width: fit-content;
+          display: flex;
+          align-items: center;
+        }
       }
     }
   }
