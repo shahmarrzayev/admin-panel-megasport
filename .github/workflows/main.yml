@@ -1,0 +1,35 @@
+on:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
+name: 🚀 Deploy website on push
+jobs:
+    web-deploy:
+        name: 🎉 Deploy
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Install SSH Key
+              uses: shimataro/ssh-key-action@v2
+              with:
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  known_hosts: "just-a-placeholder-so-we-dont-get-errors"
+            - name: Adding Known Hosts
+              run: ssh-keyscan -t ecdsa -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+            - name: Use Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: "npm"
+            - run: npm install
+            - run: CI='' npm run build
+            - name: Retrieve directory
+              run: |
+                  search_dir="$PWD"
+                  for entry in "$search_dir"/*
+                  do
+                    echo "$entry"
+                  done
+            - name: Deploy with rsync
+              run: rsync --modify-window=1 --update --progress -avz -e "ssh -p ${{ secrets.SSH_PORT }}" ./dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.UPLOAD_PATH }}
