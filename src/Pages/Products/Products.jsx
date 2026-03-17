@@ -26,6 +26,7 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sortByParam = searchParams.get("sortBy") || "createdAt";
   const directionParam = searchParams.get("direction") || "ASC";
+  const searchParam = searchParams.get("search") || "";
   const [modalActivePage, setModalActivePage] = useState("Add Product");
   const modalPageNameList = ["Add Product", "Color Images", "Variants", "Atributes", "Seo"];
   const [activeLang, setActiveLang] = useState("az");
@@ -39,6 +40,7 @@ export default function Products() {
   };
   const handleSearch = (e) => {
     setSearchValue(e.target.value);
+    handleSearchChange(e.target.value);
   };
 
   const handleFilterArea = () => {
@@ -55,6 +57,15 @@ export default function Products() {
     });
   };
 
+  const handleSearchChange = (newSearch) => {
+    setSearchParams({
+      sortBy: sortByParam,
+      direction: directionParam,
+      search: newSearch,
+      page: 1,
+    });
+  }
+
   const getAllProductsData = async (page = 1) => {
     try {
       const resData = await megaSportAdminPanel
@@ -62,7 +73,8 @@ export default function Products() {
         .get(
           `${url.productsGetAll(
             sortByParam,
-            directionParam
+            directionParam,
+            searchParam
           )}&page=${page}&perPage=30`
         );
       setAllProductsData(resData.data);
@@ -105,7 +117,6 @@ export default function Products() {
       slug: findProductItem?.slug || "",
       category: findProductItem?.categoryId || "",
       isActive: findProductItem?.isActive || false,
-      attributes: findProductItem?.attributes || [],
       variants:
         findProductItem?.variants?.length > 0
           ? findProductItem?.variants?.map((variant) => ({
@@ -398,6 +409,11 @@ export default function Products() {
             placeholder="Search"
             value={searchValue}
             onChange={handleSearch}
+            onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  getAllProductsData(currentPage)
+                }
+            }}
           />
         </label>
         <div className="pageHeaderFilterArea">
