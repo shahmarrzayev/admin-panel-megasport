@@ -40,7 +40,8 @@
             padding: 10px;
             border: 1px dotted black;
             border-radius: 10px;
-margin-bottom: 15px;
+            margin-bottom: 15px;
+
             .sectionHeader {
                 display: flex;
                 align-items: center;
@@ -69,14 +70,17 @@ margin-bottom: 15px;
                 justify-content: space-around;
                 border-top: 3px double gray;
                 margin-top: 10px;
-                .inputsArea{
+
+                .inputsArea {
                     width: 45%;
-                    input{
+
+                    input {
                         margin-top: 10px;
                     }
                 }
                 .imgAddAreaWrapper {
                     width: 45%;
+
                     .categoryImageWrapper {
                         position: relative;
                         display: flex;
@@ -87,10 +91,12 @@ margin-bottom: 15px;
                         border: 1px solid rgb(97, 95, 95);
                         border-radius: 12px;
                         background-color: rgba(66, 180, 47, 0.1);
+
                         img {
                             width: 100px;
                             height: 100px;
                         }
+
                         .deleteIcon {
                             position: absolute;
                             top: 4px;
@@ -99,6 +105,7 @@ margin-bottom: 15px;
                             z-index: 9999;
                         }
                     }
+
                     .imgAddWrapper {
                         position: relative;
                         width: 100%;
@@ -133,56 +140,97 @@ margin-bottom: 15px;
                         }
                     }
                 }
-                .removeBannerButton{
+                .removeBannerButton {
                     border: 1px solid black;
+                    border-radius: 5px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    background-color: red;
-                    width: 50px;
-                    height: 50px;
-                    svg{
-                        path{
+                    background-color: rgb(255, 0, 0);
+                    width: 30px;
+                    height: 30px;
+
+                    svg {
+                        path {
                             stroke: white;
                         }
 
                     }
                 }
-                .selectedProducts{
+                .selectedProducts {
                     width: 45%;
                     display: flex;
-                    position: relative;
-                    .searchInputs{
-                        width: 30%;
-                        input{
-                            margin: 10px 0 0;
+
+                    // position: relative;
+                    .searchInputsArea {
+                        width: 40%;
+
+                        .searchInputs {
                             width: 100%;
-                        }
-                    }
-                    .selectionProducts{
-                        position: absolute;
-                        top: 100%;
-                        left: 15%;
-                        width: 50%;
-                        //  width: 50%;
-                                height: 70px;
-                                overflow-y: scroll;
-                                background-color: gray;
-                        div{
-                            width: 100%;
-                            display: flex;
-                            align-items: center;
-                            gap: 5px;
-                            input{
-                                width: 15px; 
-                                height: 15px;
+
+                            input {
+                                margin: 10px 0 0;
+                                width: 100%;
                             }
                         }
-                        .selectionProductItem{
+
+                        .productSearchResults {
+                            position: static;
+                            top: 100%;
+                            left: 15%;
                             width: 100%;
-                            // height: 250px;
+                            margin-top: 10px;
+                            //  width: 50%;
+                            height: 120px;
                             overflow-y: scroll;
-                            // background-color: red;
+                            background-color: gray;
+
+                            div {
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+
+                                input {
+                                    width: 15px;
+                                    height: 15px;
+                                }
+                            }
+
+                            .selectionProductItem {
+                                width: 100%;
+                                // height: 250px;
+                                overflow-y: scroll;
+                                // background-color: red;
+                            }
+                        }
+                    }
+                    .categorySearch{
+                        display: flex;
+                        justify-content: space-between;
+                        width: 80%;
+                        .searchInputs{
+                            width: 30%;
+                        }
+                        .dropdown{
+                            width: 65%;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                        }
+                        .productSearchResults{
+                            // width: 60%;
+                        }
+                    }
+                    .selectedProductsList{
+                        width: 60%;
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                        .selectedProductItem{
+                            width: fit-content;
+                            font-size: 13px;
+                            cursor: not-allowed;
                         }
                     }
                 }
