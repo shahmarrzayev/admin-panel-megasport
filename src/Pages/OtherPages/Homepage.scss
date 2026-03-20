@@ -86,15 +86,16 @@
                         display: flex;
                         align-items: center;
                         margin-top: 10px;
-                        width: 150px;
-                        height: 120px;
+                        width: 250px;
+                        height: 150px;
                         border: 1px solid rgb(97, 95, 95);
                         border-radius: 12px;
                         background-color: rgba(66, 180, 47, 0.1);
 
                         img {
-                            width: 100px;
-                            height: 100px;
+                            width: 90%;
+                            height: 90%;
+                            object-fit: contain;
                         }
 
                         .deleteIcon {
@@ -146,13 +147,13 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    background-color: rgb(255, 0, 0);
+                    background-color: rgb(224, 224, 224);
                     width: 30px;
                     height: 30px;
 
                     svg {
                         path {
-                            stroke: white;
+                            stroke: rgb(0, 0, 0);
                         }
 
                     }
@@ -201,7 +202,7 @@
                                 width: 100%;
                                 // height: 250px;
                                 overflow-y: scroll;
-                                // background-color: red;
+                               
                             }
                         }
                     }
@@ -232,6 +233,68 @@
                             font-size: 13px;
                             cursor: not-allowed;
                         }
+                    }
+                }
+                .collectionsInputs{
+                    width: 20%;
+                    .collectionsSearchResults{
+                        
+                        width: 100%;
+                        height: 120px;
+                        overflow: auto;
+                        
+                        div{
+                            background-color: rgb(219, 219, 219);
+                            display: flex;
+                            input{
+                                width: 20px;
+                            }
+                        }
+                    }
+                     .productSearchResults {
+                            position: static;
+                            top: 100%;
+                            left: 15%;
+                            width: 100%;
+                            margin-top: 10px;
+                            //  width: 50%;
+                            height: 120px;
+                            overflow-y: scroll;
+                            background-color: gray;
+
+                            div {
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+
+                                input {
+                                    width: 15px;
+                                    height: 15px;
+                                }
+                            }
+
+                            .selectionProductItem {
+                                width: 100%;
+                                // height: 250px;
+                                overflow-y: scroll;
+                                
+                            }
+                        }
+                }
+                .collectionsResults{
+                    width: 75%;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 5px;
+                    span{
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        border: 1px solid gray;
+                        width: fit-content;
+                        display: flex;
+                        align-items: center;
+                        cursor: pointer;
                     }
                 }
             }

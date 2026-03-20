@@ -5,6 +5,7 @@ import ImageAddIcon from "../../assets/Icons/ImageAddIcon";
 import { useFormik } from "formik";
 import megaSportAdminPanel from "../../Helpers/Helpers";
 import url from "../../ApiUrls/Url";
+import Swal from "sweetalert2";
 
 const Homepage = () => {
   const [productSearchTerms, setProductSearchTerms] = useState({});
@@ -106,10 +107,17 @@ const Homepage = () => {
         const res = await megaSportAdminPanel
           .api()[method]("internal/page-config/home", formattedValues)
 
-        if (res.status === 200 || res.status === 201) {
-          window.alert(isUpdate ? "Yeniləndi!" : "Əlavə edildi!");
+        
+          Swal.fire({
+  icon: "success",
+  title: isUpdate ? "Updated!" : "Added!",
+  text: isUpdate 
+    ? "Məlumat uğurla yeniləndi" 
+    : "Məlumat uğurla əlavə edildi",
+  confirmButtonText: "OK"
+});
           setIsUpdate(true);
-        }
+        
       } catch (error) {
         console.error(error);
       }
@@ -179,19 +187,39 @@ const Homepage = () => {
     }
   };
 
+  // const addProductToCollection = (brandName, product) => {
+  //   const id = product?.id || product?._id;
+  //   if (!id) return;
+
+  //   const current = HomePage.values.homeNewCollections[brandName] || [];
+
+  //   if (current.find((pr) => pr._id === id)) return;
+
+  //   HomePage.setFieldValue(`homeNewCollections.${brandName}`, [
+  //     ...current,
+  //     product,
+  //   ]);
+  // };
   const addProductToCollection = (brandName, product) => {
-    const id = product?.id || product?._id;
-    if (!id) return;
+  const id = getId(product);
+  if (!id) return;
 
-    const current = HomePage.values.homeNewCollections[brandName] || [];
+  const current = HomePage.values.homeNewCollections[brandName] || [];
 
-    if (current.find((pr) => pr._id === id)) return;
+  const exists = current.find((pr) => getId(pr) === id);
 
-    HomePage.setFieldValue(`homeNewCollections.${brandName}`, [
-      ...current,
-      product,
-    ]);
-  };
+  let updated;
+
+  if (exists) {
+    // REMOVE
+    updated = current.filter((pr) => getId(pr) !== id);
+  } else {
+    // ADD
+    updated = [...current, product];
+  }
+
+  HomePage.setFieldValue(`homeNewCollections.${brandName}`, updated);
+};
 
   const removeProductFromCollection = (brandName, idToRemove) => {
     const current = HomePage.values.homeNewCollections[brandName] || [];
@@ -200,39 +228,39 @@ const Homepage = () => {
 
     HomePage.setFieldValue(`homeNewCollections.${brandName}`, updated);
   };
-const getId = (item) => {
-  if (!item) return null;
-  if (typeof item === "string") return item;
-  return item._id || item.id;
-};
-const addProductToBestSeller = (product) => {
-  const id = getId(product);
-  if (!id) return;
+  const getId = (item) => {
+    if (!item) return null;
+    if (typeof item === "string") return item;
+    return item._id || item.id;
+  };
+  const addProductToBestSeller = (product) => {
+    const id = getId(product);
+    if (!id) return;
 
-  const current = HomePage.values.homeBestSellers.products || [];
+    const current = HomePage.values.homeBestSellers.products || [];
 
-  const exists = current.find((p) => getId(p) === id);
+    const exists = current.find((p) => getId(p) === id);
 
-  let updated;
+    let updated;
 
-  if (exists) {
-    updated = current.filter((p) => getId(p) !== id);
-  } else {
-    updated = [...current, product];
-  }
+    if (exists) {
+      updated = current.filter((p) => getId(p) !== id);
+    } else {
+      updated = [...current, product];
+    }
 
-  HomePage.setFieldValue("homeBestSellers.products", updated);
-};
+    HomePage.setFieldValue("homeBestSellers.products", updated);
+  };
 
-const removeProductFromBestSeller = (idToRemove) => {
-  const current = HomePage.values.homeBestSellers.products || [];
+  const removeProductFromBestSeller = (idToRemove) => {
+    const current = HomePage.values.homeBestSellers.products || [];
 
-  const updated = current.filter(
-    (p) => getId(p) !== idToRemove
-  );
+    const updated = current.filter(
+      (p) => getId(p) !== idToRemove
+    );
 
-  HomePage.setFieldValue("homeBestSellers.products", updated);
-};
+    HomePage.setFieldValue("homeBestSellers.products", updated);
+  };
   const handleAddCategoryRow = () => {
     const current = (HomePage.values.homeFeaturedCategories || []);
     HomePage.setFieldValue("homeFeaturedCategories", [
@@ -385,51 +413,53 @@ const removeProductFromBestSeller = (idToRemove) => {
             <div className="miniSection">
               <div className="sectionHeader">
                 <h3 className="sectionTitle">Home New Collections</h3>
-                {/* <button type="button" onClick={handleAddCollectionRow}>
-                  Add Collections Row
-                </button> */}
               </div>
 
               {Object.keys(HomePage.values.homeNewCollections || {}).map((brand) => (
                 <div key={brand} className="sectionsInputs">
 
-                  <h4>{brand}</h4>
+                  <div className="collectionsInputs">
 
-                  {/* SEARCH */}
-                  <input
-                    type="text"
-                    placeholder="Search product..."
-                    value={productSearchTerms[brand] || ""}
-                    onChange={(e) =>
-                      handleGeneralSearch(e.target.value, brand, "product")
-                    }
-                  />
+                    <h4>{brand}</h4>
+                    <input
+                      type="text"
+                      placeholder="Search product..."
+                      value={productSearchTerms[brand] || ""}
+                      onChange={(e) =>
+                        handleGeneralSearch(e.target.value, brand, "product")
+                      }
+                    />
+                    {productSearchTerms && (
+                      <div className="collectionsSearchResults">
+                        {(productSearchResults[brand] || []).map((product) => {
+                          const id = product._id || product.id;
 
-                  {/* SEARCH RESULTS */}
-                  {(productSearchResults[brand] || []).map((product) => {
-                    const id = product._id || product.id;
+                          return (
+                            <div
+                              key={id}
+                              onClick={() => addProductToCollection(brand, product)}
+                              className=""
+                            >
+                              <input
+                                type="checkbox"
+                                readOnly
+                                checked={
+                                  (HomePage.values.homeNewCollections[brand] || []).some(
+                                   (pr) => getId(pr) === id
 
-                    return (
-                      <div
-                        key={id}
-                        onClick={() => addProductToCollection(brand, product)}
-                      >
-                        <input
-                          type="checkbox"
-                          readOnly
-                          checked={
-                            (HomePage.values.homeNewCollections[brand] || []).some(
-                              (pr) => pr._id === id
-                            )
-                          }
-                        />
-                        {product.title?.az}
-                      </div>
-                    );
-                  })}
+                                  )
+                                }
+                              />
+                              {product.title?.az}
+                            </div>
+                          );
+                        })}
+                      </div>)}
+                  </div>
+
 
                   {/* SELECTED PRODUCTS */}
-                  <div>
+                  <div className="collectionsResults">
                     {(HomePage.values.homeNewCollections[brand] || []).map((product) => (
                       <span
                         key={product._id}
@@ -438,6 +468,7 @@ const removeProductFromBestSeller = (idToRemove) => {
                         }
                       >
                         {product.title?.az}
+                        <CloseIcon />
                       </span>
                     ))}
                   </div>
@@ -451,8 +482,8 @@ const removeProductFromBestSeller = (idToRemove) => {
               </div>
 
               <div className="sectionsInputs">
-                <div className="selectedProducts">
-                  <div className="searchInputsArea">
+               
+                  <div className="collectionsInputs">
                     <div className="searchInputs">
                       <label>Search & Select Products</label>
                       <input
@@ -472,7 +503,7 @@ const removeProductFromBestSeller = (idToRemove) => {
 
                         {bestSellerSearchResults.map((product) => {
                           console.log(bestSellerSearchResults);
-                          
+
                           const id = product.id || product._id;
 
                           return (
@@ -498,7 +529,7 @@ const removeProductFromBestSeller = (idToRemove) => {
                     )}
                   </div>
 
-                  <div className="selectedProductsList">
+                  <div className="collectionsResults">
                     {/* Seçilmiş ID-ləri göstəririk */}
                     {(HomePage.values.homeBestSellers?.products || []).map((pr) => (
                       <span
@@ -506,11 +537,11 @@ const removeProductFromBestSeller = (idToRemove) => {
                         className="selectedProductItem"
                         onClick={() => removeProductFromBestSeller(pr._id)}
                       >
-                        {pr.title.az}
+                        {pr.title.az} <CloseIcon/>
                       </span>
                     ))}
                   </div>
-                </div>
+                
               </div>
             </div>
             <div className="miniSection">
