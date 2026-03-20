@@ -134,9 +134,10 @@ export default function ProductModal({
       (img) => img && img.trim().length > 0
     );
 
-    if (!colorImageForm.color || !colorImageForm.colorCode || !cleanedImages.length) {
+    if (!colorImageForm.color || !cleanedImages.length) {
       return;
     }
+
 
     const newItem = {
       color: colorImageForm.color,
@@ -144,8 +145,10 @@ export default function ProductModal({
       images: cleanedImages,
     };
 
-    const current = productFormik.values.colorImages || [];
+    console.log("new color image item:", newItem);
 
+    const current = productFormik.values.colorImages || [];
+    console.log("current color images before save:", current);
     if (editingColorImageIndex !== null) {
       const updated = [...current];
       updated[editingColorImageIndex] = newItem;

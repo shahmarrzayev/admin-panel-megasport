@@ -28,8 +28,8 @@ const url = {
   attributeCreate: "internal/attribute/",
   attributeUpdate: (id) => `internal/attribute/${id}`,
   attributeDelete: (id) => `internal/attribute/${id}`,
-  productsGetAll: (s = "createdAt", d = "ASC") =>
-    `internal/product?sortBy=${s}&direction=${d}`,
+  productsGetAll: (sortBy = "createdAt", direction = "ASC", search = "") =>
+    `internal/product?sortBy=${sortBy}&direction=${direction}&search=${search}`,
   productCreated: "internal/product/",
   productUpdata: (id) => `internal/product/${id}`,
   productDelete: (id) => `internal/product/${id}`,
