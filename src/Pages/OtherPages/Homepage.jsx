@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Homepage.scss";
 import CloseIcon from "../../assets/Icons/CloseIcon";
 import ImageAddIcon from "../../assets/Icons/ImageAddIcon";
@@ -9,25 +9,43 @@ import url from "../../ApiUrls/Url";
 const Homepage = () => {
   const [productSearchTerms, setProductSearchTerms] = useState({});
   const [productSearchResults, setProductSearchResults] = useState({});
-  const [bestSellerSearchTerms, setBestSellerSearchTerms] = useState({});
-  const [bestSellerSearchResults, setBestSellerSearchResults] = useState({});
+  const [bestSellerSearchTerm, setBestSellerSearchTerm] = useState("");
+  const [bestSellerSearchResults, setBestSellerSearchResults] = useState([]);
   const [catSearchTerms, setCatSearchTerms] = useState({});
   const [catSearchResults, setCatSearchResults] = useState({});
-  const targetBrandDatas = [
-    {
-      id: 1,
-      name: "TİMBERLAND"
-    },
-    {
-      id: 2,
-      name: "NAPAPIJRI"
-    },
-    {
-      id: 3,
-      name: "THE NORTH FACE"
-    },
+  const [isUpdate, setIsUpdate] = useState(false);
 
-  ]
+  const normalizeCategories = (categories) => {
+    return categories.map(item => ({
+      sortOrder: item.sortOrder,
+      category: item.category || null,
+      categoryId: item.category?.id || item.category?._id || item.categoryId
+    }));
+  };
+
+  useEffect(() => {
+    const getHomePageData = async () => {
+      try {
+        const res = await megaSportAdminPanel.api().get("internal/page-config/home");
+
+        if (res?.data) {
+          HomePage.setValues({
+            ...res.data,
+            homeFeaturedCategories: normalizeCategories(
+              res.data.homeFeaturedCategories || []
+            )
+          });
+
+          setIsUpdate(true);
+        }
+      } catch (error) {
+        console.error(error);
+        setIsUpdate(false);
+      }
+    };
+
+    getHomePageData();
+  }, []);
 
   const HomePage = useFormik({
     initialValues: {
@@ -38,30 +56,64 @@ const Homepage = () => {
           sortOrder: "",
         },
       ],
-      homeNewCollections: [
-        {
-          brandName: "",
-          products: [],
-        },
-      ],
-      homeBestSellers: [
-        {
-          title: "",
-          products: [],
-        },
-      ],
+      homeNewCollections: {
+        NAPAPIJRI: [],
+        "THE NORTH FACE": [],
+        TIMBERLAND: [],
+      },
+      homeBestSellers: {
+        title: "Home Best Seller",
+        products: [],
+      },
       homeFeaturedCategories: [
         {
-          categoryId: "",
+          category: null,
           sortOrder: 1,
         },
       ],
     },
     enableReinitialize: true,
     onSubmit: async (values) => {
-      // TODO: Ana səhifə üçün API endpoint əlavə olunanda burada istifadə et
-      console.log("Homepage values:", values);
-    },
+      try {
+        const formattedValues = {
+          ...values,
+
+          // ✅ Featured Categories → only categoryId
+          homeFeaturedCategories: values.homeFeaturedCategories.map((item) => ({
+            categoryId: item.category?.id || item.categoryId,
+            sortOrder: item.sortOrder
+          })),
+
+          // ✅ Best Sellers → only product IDs
+          homeBestSellers: {
+            ...values.homeBestSellers,
+            products: (values.homeBestSellers.products || []).map(
+              (p) => p._id || p.id || p
+            )
+          },
+
+          // ✅ New Collections → brand üzrə only product IDs
+          homeNewCollections: Object.entries(values.homeNewCollections || {}).map(
+            ([brand, products]) => ({
+              brandName: brand,
+              products: (products || []).map(p => p._id || p.id || p)
+            })
+          )
+        };
+
+        const method = isUpdate ? "put" : "post";
+
+        const res = await megaSportAdminPanel
+          .api()[method]("internal/page-config/home", formattedValues)
+
+        if (res.status === 200 || res.status === 201) {
+          window.alert(isUpdate ? "Yeniləndi!" : "Əlavə edildi!");
+          setIsUpdate(true);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
   });
 
   const handleAddBannerRow = () => {
@@ -83,27 +135,6 @@ const Homepage = () => {
     HomePage.setFieldValue("homeBanners", updated);
   };
 
-  const handleAddCollectionRow = () => {
-    const current = (HomePage.values.homeNewCollections || []).map((c) => ({
-      ...c,
-      products: [...(c.products || [])],
-    }));
-    HomePage.setFieldValue("homeNewCollections", [
-      ...current,
-      { brandName: "", products: [] },
-    ]);
-  };
-
-  const handleRemoveCollectionRow = (index) => {
-    const current = (HomePage.values.homeNewCollections || []).map((c) => ({
-      ...c,
-      products: [...(c.products || [])],
-    }));
-    if (current.length === 1) return;
-    const updated = current.filter((_, i) => i !== index);
-    HomePage.setFieldValue("homeNewCollections", updated);
-  };
-
   const handleChangeBannerImage = async (index, event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -112,7 +143,7 @@ const Homepage = () => {
     try {
       const res = await megaSportAdminPanel
         .api()
-        .post(url.fileUpload("category"), formData);
+        .post(url.fileUpload("page"), formData);
       if (res?.data?.name) {
         const current = (HomePage.values.homeBanners || []).map((b) => ({
           ...b,
@@ -142,131 +173,66 @@ const Homepage = () => {
       HomePage.setFieldValue("homeBanners", current);
       await megaSportAdminPanel
         .api()
-        .delete(url.fileDelete(imageName, "category"));
+        .delete(url.fileDelete(imageName, "page"));
     } catch (error) {
       console.log(error);
     }
   };
 
-  const searchProducts = async (searchTerm, index) => {
-    const trimmed = searchTerm.trim();
-    setProductSearchTerms((prev) => ({
-      ...prev,
-      [index]: searchTerm,
-    }));
-
-    if (!trimmed) {
-      setProductSearchResults((prev) => ({
-        ...prev,
-        [index]: [],
-      }));
-      return;
-    }
-
-    try {
-      const res = await megaSportAdminPanel
-        .api()
-        .get(url.discountProductSearch(trimmed));
-      setProductSearchResults((prev) => ({
-        ...prev,
-        [index]: res.data.data || [],
-      }));
-      console.log(productSearchResults);
-
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const addProductToCollection = (collectionIndex, product) => {
+  const addProductToCollection = (brandName, product) => {
     const id = product?.id || product?._id;
     if (!id) return;
 
-    const current = (HomePage.values.homeNewCollections || []).map((c) => ({
-      ...c,
-      products: [...(c.products || [])],
-    }));
+    const current = HomePage.values.homeNewCollections[brandName] || [];
 
-    const existing = current[collectionIndex].products || [];
-    if (existing.includes(id)) return;
+    if (current.find((pr) => pr._id === id)) return;
 
-    current[collectionIndex].products = [...existing, id];
-    HomePage.setFieldValue("homeNewCollections", current);
+    HomePage.setFieldValue(`homeNewCollections.${brandName}`, [
+      ...current,
+      product,
+    ]);
   };
 
-  const removeProductFromCollection = (collectionIndex, idToRemove) => {
-    const current = (HomePage.values.homeNewCollections || []).map((c) => ({
-      ...c,
-      products: [...(c.products || [])],
-    }));
+  const removeProductFromCollection = (brandName, idToRemove) => {
+    const current = HomePage.values.homeNewCollections[brandName] || [];
 
-    current[collectionIndex].products = current[collectionIndex].products.filter(
-      (id) => id !== idToRemove
-    );
+    const updated = current.filter((pr) => pr._id !== idToRemove);
 
-    HomePage.setFieldValue("homeNewCollections", current);
+    HomePage.setFieldValue(`homeNewCollections.${brandName}`, updated);
   };
+const getId = (item) => {
+  if (!item) return null;
+  if (typeof item === "string") return item;
+  return item._id || item.id;
+};
+const addProductToBestSeller = (product) => {
+  const id = getId(product);
+  if (!id) return;
 
-  // Best Seller üçün ayrıca axtarış funksiyası
-  const searchBestSellerProducts = async (searchTerm, index) => {
-    const trimmed = searchTerm.trim();
-    setBestSellerSearchTerms((prev) => ({
-      ...prev,
-      [index]: searchTerm,
-    }));
+  const current = HomePage.values.homeBestSellers.products || [];
 
-    if (!trimmed) {
-      setBestSellerSearchResults((prev) => ({
-        ...prev,
-        [index]: [],
-      }));
-      return;
-    }
+  const exists = current.find((p) => getId(p) === id);
 
-    try {
-      const res = await megaSportAdminPanel
-        .api()
-        .get(url.discountProductSearch(trimmed));
-      setBestSellerSearchResults((prev) => ({
-        ...prev,
-        [index]: res.data.data || [],
-      }));
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  let updated;
 
-  // Best Seller üçün məhsul əlavə etmə və silmə funksiyaları
-  const addProductToBestSeller = (bestSellerIndex, product) => {
-    const id = product?.id || product?._id;
-    if (!id) return;
+  if (exists) {
+    updated = current.filter((p) => getId(p) !== id);
+  } else {
+    updated = [...current, product];
+  }
 
-    const current = (HomePage.values.homeBestSellers || []).map((b) => ({
-      ...b,
-      products: [...(b.products || [])],
-    }));
+  HomePage.setFieldValue("homeBestSellers.products", updated);
+};
 
-    const existing = current[bestSellerIndex].products || [];
-    if (existing.includes(id)) return;
+const removeProductFromBestSeller = (idToRemove) => {
+  const current = HomePage.values.homeBestSellers.products || [];
 
-    current[bestSellerIndex].products = [...existing, id];
-    HomePage.setFieldValue("homeBestSellers", current);
-  };
+  const updated = current.filter(
+    (p) => getId(p) !== idToRemove
+  );
 
-  const removeProductFromBestSeller = (bestSellerIndex, idToRemove) => {
-    const current = (HomePage.values.homeBestSellers || []).map((b) => ({
-      ...b,
-      products: [...(b.products || [])],
-    }));
-
-    current[bestSellerIndex].products = current[bestSellerIndex].products.filter(
-      (id) => id !== idToRemove
-    );
-
-    HomePage.setFieldValue("homeBestSellers", current);
-  };
-
-  // Kateqoriya sətiri əlavə et
+  HomePage.setFieldValue("homeBestSellers.products", updated);
+};
   const handleAddCategoryRow = () => {
     const current = (HomePage.values.homeFeaturedCategories || []);
     HomePage.setFieldValue("homeFeaturedCategories", [
@@ -275,7 +241,6 @@ const Homepage = () => {
     ]);
   };
 
-  // Kateqoriya sətiri sil
   const handleRemoveCategoryRow = (index) => {
     const current = (HomePage.values.homeFeaturedCategories || []);
     if (current.length === 1) return;
@@ -283,38 +248,59 @@ const Homepage = () => {
     HomePage.setFieldValue("homeFeaturedCategories", updated);
   };
 
-  // Kateqoriya axtarışı (API: internal/category/search/:searchTerm)
-  const searchCategories = async (searchTerm, index) => {
-    setCatSearchTerms((prev) => ({ ...prev, [index]: searchTerm }));
-    const trimmed = searchTerm.trim();
+  const selectCategory = (index, category) => {
+    HomePage.setFieldValue(`homeFeaturedCategories[${index}]`, {
+      ...HomePage.values.homeFeaturedCategories[index],
+      categoryId: category.id || category._id,
+      category: category
+    });
+  };
 
+
+  const handleGeneralSearch = async (searchTerm, index, type) => {
+    const searchConfig = {
+      product: {
+        setTerm: setProductSearchTerms,
+        setResults: setProductSearchResults,
+        apiUrl: url.discountProductSearch(searchTerm)
+      },
+      bestSeller: {
+        setTerm: setBestSellerSearchTerm,
+        setResults: setBestSellerSearchResults,
+        apiUrl: url.discountProductSearch(searchTerm)
+      },
+      category: {
+        setTerm: setCatSearchTerms,
+        setResults: setCatSearchResults,
+        apiUrl: `internal/category/search/${searchTerm}`
+      }
+    };
+
+    const config = searchConfig[type];
+    config.setTerm((prev) => ({ ...prev, [index]: searchTerm }));
+
+    const trimmed = searchTerm.trim();
+    if (type === "bestSeller") {
+      setBestSellerSearchTerm(searchTerm);
+
+      const res = await megaSportAdminPanel.api().get(config.apiUrl);
+      setBestSellerSearchResults(res.data.data || res.data || []);
+      return;
+    }
     if (!trimmed) {
-      setCatSearchResults((prev) => ({ ...prev, [index]: [] }));
+      config.setResults((prev) => ({ ...prev, [index]: [] }));
       return;
     }
 
     try {
-      // API URL-nizə uyğun olaraq tənzimləyin
-      const res = await megaSportAdminPanel.api().get(`internal/category/search/${trimmed}`);
-      console.log(res.data.data);
-
-      setCatSearchResults((prev) => ({
+      const res = await megaSportAdminPanel.api().get(config.apiUrl);
+      config.setResults((prev) => ({
         ...prev,
-        [index]: res.data.data || [], // API-nin qaytardığı struktura görə
+        [index]: res.data.data || res.data || [],
       }));
     } catch (error) {
-      console.error("Category search error:", error);
+      console.error(`${type} search error:`, error);
     }
-  };
-
-  // Kateqoriya seçildikdə ID-ni Formik-ə yaz
-  const selectCategory = (index, category) => {
-    const id = category.id || category._id;
-    HomePage.setFieldValue(`homeFeaturedCategories[${index}].categoryId`, id);
-
-    // Axtarış nəticələrini təmizlə və inputa adı yaz (vizual olaraq)
-    setCatSearchTerms((prev) => ({ ...prev, [index]: category.title?.az || category.name }));
-    setCatSearchResults((prev) => ({ ...prev, [index]: [] }));
   };
 
   return (
@@ -324,7 +310,7 @@ const Homepage = () => {
           <div className="row">
             <div className="borderDiv"></div>
             <button type="submit" className="submitButton">
-              Add New Data
+              {isUpdate ? "Update Data" : "Add New Data"}
             </button>
           </div>
           <div className="formDatas">
@@ -341,17 +327,17 @@ const Homepage = () => {
                   <div className="inputsArea">
                     <label htmlFor={`targetUrl-${index}`}>Target Url</label>
                     <input
-                      type="text"
+                      type="url"
                       id={`targetUrl-${index}`}
-                      name='targetUrl'
-                      value={banner.targetUrl}
+                      name={`homeBanners[${index}].targetUrl`}
+                      value={banner.targetUrl ? banner.targetUrl : ""}
                       onChange={HomePage.handleChange}
                     />
                     <label htmlFor={`sortOrder-${index}`}>Sort Order</label>
                     <input
                       type="number"
                       id={`sortOrder-${index}`}
-                      name='sortOrder'
+                      name={`homeBanners[${index}].sortOrder`}
                       value={banner.sortOrder ? banner.sortOrder : 1}
                       onChange={HomePage.handleChange}
                     />
@@ -363,7 +349,7 @@ const Homepage = () => {
                     {banner.image ? (
                       <div className="categoryImageWrapper">
                         <img
-                          src={`${megaSportAdminPanel.baseUrlImage}category/${banner.image}`}
+                          src={`${megaSportAdminPanel.baseUrlImage}page/${banner.image}`}
                           alt="banner"
                         />
                         <span
@@ -399,169 +385,133 @@ const Homepage = () => {
             <div className="miniSection">
               <div className="sectionHeader">
                 <h3 className="sectionTitle">Home New Collections</h3>
-                <button type="button" onClick={handleAddCollectionRow}>
+                {/* <button type="button" onClick={handleAddCollectionRow}>
                   Add Collections Row
-                </button>
+                </button> */}
               </div>
 
-              {(HomePage.values.homeNewCollections || []).map(
-                (collections, index) => (
-                  <div key={index} className="sectionsInputs">
-                    <div className="inputsArea">
-                      <label htmlFor={`brandName-${index}`}>
-                        Brand Name
-                      </label>
-                      <select
-                        id={`brandName-${index}`}
-                        name={`homeNewCollections[${index}].brandName`}
-                        value={collections.brandName || ""}
-                        onChange={HomePage.handleChange}
+              {Object.keys(HomePage.values.homeNewCollections || {}).map((brand) => (
+                <div key={brand} className="sectionsInputs">
+
+                  <h4>{brand}</h4>
+
+                  {/* SEARCH */}
+                  <input
+                    type="text"
+                    placeholder="Search product..."
+                    value={productSearchTerms[brand] || ""}
+                    onChange={(e) =>
+                      handleGeneralSearch(e.target.value, brand, "product")
+                    }
+                  />
+
+                  {/* SEARCH RESULTS */}
+                  {(productSearchResults[brand] || []).map((product) => {
+                    const id = product._id || product.id;
+
+                    return (
+                      <div
+                        key={id}
+                        onClick={() => addProductToCollection(brand, product)}
                       >
-                        <option value="">Select Brand</option>
-
-                        {targetBrandDatas.map((brand) => (
-                          <option key={brand.id} value={brand.name}>
-                            {brand.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="selectedProducts">
-                      <div className="searchInputsArea">
-                        <div className="searchInputs">
-                          <label htmlFor="">
-                            Selected Products
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Search Term "
-                            value={productSearchTerms[index] || ""}
-                            onChange={(e) =>
-                              searchProducts(e.target.value, index)
-                            }
-                          />
-                        </div>
-                        {productSearchTerms[index] && (
-                          <div className="productSearchResults">
-                            {(productSearchResults[index] || []).map((product) => {
-                              const id = product.id || product._id;
-
-                              return (
-                                <div
-                                  key={id}
-                                  className="selectionProductItem"
-                                  onClick={() => addProductToCollection(index, product)}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    readOnly
-                                    checked={(collections.products || []).includes(id)}
-                                  />
-                                  <span>{product.title.az}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                        <input
+                          type="checkbox"
+                          readOnly
+                          checked={
+                            (HomePage.values.homeNewCollections[brand] || []).some(
+                              (pr) => pr._id === id
+                            )
+                          }
+                        />
+                        {product.title?.az}
                       </div>
+                    );
+                  })}
 
-                      <div className="selectedProductsList">
-                        {(collections.products || []).map(
-                          (id) => (
-                            <span
-                              key={id}
-                              className="selectedProductItem"
-                              onClick={() =>
-                                removeProductFromCollection(
-                                  index,
-                                  id
-                                )
-                              }
-                            >
-                              {id}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="removeBannerButton"
-                      onClick={() =>
-                        handleRemoveCollectionRow(index)
-                      }
-                    >
-                      <CloseIcon />
-                    </button>
+                  {/* SELECTED PRODUCTS */}
+                  <div>
+                    {(HomePage.values.homeNewCollections[brand] || []).map((product) => (
+                      <span
+                        key={product._id}
+                        onClick={() =>
+                          removeProductFromCollection(brand, product._id)
+                        }
+                      >
+                        {product.title?.az}
+                      </span>
+                    ))}
                   </div>
-                )
-              )}
+                </div>
+              ))}
 
             </div>
             <div className="miniSection">
               <div className="sectionHeader">
                 <h3 className="sectionTitle">Home Best Sellers</h3>
-
               </div>
 
-              {(HomePage.values.homeBestSellers || []).map((bestSeller, index) => (
-                <div key={index} className="sectionsInputs">
+              <div className="sectionsInputs">
+                <div className="selectedProducts">
+                  <div className="searchInputsArea">
+                    <div className="searchInputs">
+                      <label>Search & Select Products</label>
+                      <input
+                        type="text"
+                        placeholder="Search Term"
+                        value={bestSellerSearchTerm}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBestSellerSearchTerm(val);
+                          handleGeneralSearch(val, 0, "bestSeller"); // Burada 0-cı indeksi sabit saxlayırıq
+                        }}
+                      />
+                    </div>
 
+                    {bestSellerSearchTerm && (
+                      <div className="productSearchResults">
 
-                  <div className="selectedProducts">
-                    <div className="searchInputsArea">
-                      <div className="searchInputs">
-                        <label>Search & Select Products</label>
-                        <input
-                          type="text"
-                          placeholder="Search Term"
-                          value={bestSellerSearchTerms[index] || ""}
-                          onChange={(e) =>
-                            searchBestSellerProducts(e.target.value, index)
-                          }
-                        />
+                        {bestSellerSearchResults.map((product) => {
+                          console.log(bestSellerSearchResults);
+                          
+                          const id = product.id || product._id;
+
+                          return (
+                            <div
+                              key={id}
+                              className="selectionProductItem"
+                              onClick={() => addProductToBestSeller(product)}
+                            >
+                              <input
+                                type="checkbox"
+                                readOnly
+                                checked={
+                                  (HomePage.values.homeBestSellers.products || []).some(
+                                    (p) => (p._id || p.id || p) === id
+                                  )
+                                }
+                              />
+                              <span>{product.title?.az}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-
-                      {bestSellerSearchTerms[index] && (
-                        <div className="productSearchResults">
-                          {(bestSellerSearchResults[index] || []).map((product) => {
-                            const id = product.id || product._id;
-
-                            return (
-                              <div
-                                key={id}
-                                className="selectionProductItem"
-                                onClick={() => addProductToBestSeller(index, product)}
-                              >
-                                <input
-                                  type="checkbox"
-                                  readOnly
-                                  checked={(bestSeller.products || []).includes(id)}
-                                />
-                                <span>{product.title?.az || "Adsız Məhsul"}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="selectedProductsList">
-                      {(bestSeller.products || []).map((id) => (
-                        <span
-                          key={id}
-                          className="selectedProductItem"
-                          onClick={() => removeProductFromBestSeller(index, id)}
-                        >
-                          {id}
-                        </span>
-                      ))}
-                    </div>
+                    )}
                   </div>
 
-
+                  <div className="selectedProductsList">
+                    {/* Seçilmiş ID-ləri göstəririk */}
+                    {(HomePage.values.homeBestSellers?.products || []).map((pr) => (
+                      <span
+                        key={pr._id}
+                        className="selectedProductItem"
+                        onClick={() => removeProductFromBestSeller(pr._id)}
+                      >
+                        {pr.title.az}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
             <div className="miniSection">
               <div className="sectionHeader">
@@ -573,44 +523,44 @@ const Homepage = () => {
 
               {(HomePage.values.homeFeaturedCategories || []).map((cat, index) => (
                 <div key={index} className="sectionsInputs">
-                  <div key={index}className="selectedProducts" style={{width:"100%"}}>
+                  <div key={index} className="selectedProducts" style={{ width: "100%" }}>
 
                     {/* Kateqoriya Axtarış Inputu */}
                     <div className="searchInputsArea categorySearch" >
                       <div className="searchInputs">
 
-                      <label>Search Category</label>
-                      <input
-                        type="text"
-                        placeholder="Type category name..."
-                        value={catSearchTerms[index] || ""}
-                        onChange={(e) => searchCategories(e.target.value, index)}
-                      />
+                        <label>Search Category</label>
+                        <input
+                          type="text"
+                          placeholder="Type category name..."
+                          value={catSearchTerms[index] || ""}
+                          onChange={(e) => handleGeneralSearch(e.target.value, index, "category")}
+                        />
                       </div>
 
                       {/* Axtarış Nəticələri Dropdown */}
                       <div className="dropdown">
 
-                      {catSearchResults[index] && catSearchResults[index].length > 0 && (
-                        <div className="productSearchResults" >
-                          {catSearchResults[index].map((category) => (
-                            <div
-                              key={category.id || category._id}
-                              className="selectionProductItem"
-                              onClick={() => selectCategory(index, category)}
-                            >
-                              <span>{category.title?.az || category.name.az}</span>
-                            </div>
-                          ))}
-                          
-                        </div>
-                      )}
-                       <small style={{ color: "gray", display: "block", marginTop: "4px",fontSize:"16px" }}>
-                        Selected ID: {cat?.categoryId || "None"}
-                      </small>
+                        {catSearchResults[index] && catSearchResults[index].length > 0 && (
+                          <div className="productSearchResults" >
+                            {catSearchResults[index].map((category) => (
+                              <div
+                                key={category.id || category._id}
+                                className="selectionProductItem"
+                                onClick={() => selectCategory(index, category)}
+                              >
+                                <span>{category.title?.az || category.name.az}</span>
+                              </div>
+                            ))}
+
+                          </div>
+                        )}
+                        <small style={{ color: "gray", display: "block", marginTop: "4px", fontSize: "16px" }}>
+                          Selected : {cat?.category?.name?.az || "None"}
+                        </small>
                       </div>
-                     
-                     
+
+
                     </div>
 
                     <div className="inputItem" >
@@ -623,7 +573,7 @@ const Homepage = () => {
                       />
                     </div>
 
-              
+
                     <button
                       type="button"
                       className="removeBannerButton"
